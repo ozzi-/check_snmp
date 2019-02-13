@@ -4,12 +4,14 @@ Provides SNMP checks using minimum and maximum integer values for warning and cr
 
 Example usage of the script:
 ```
+./check_snmp.sh -H 192.168.200.101 -o iso.3.6.1.2.1.25.4.2.1.6.11391 -w 3 -m 7 -W 7 -M 999
+CRTICAL: Response value '4' is smaller than critical limit '7'
+
 ./check_snmp.sh -H 192.168.200.101 -o iso.3.6.1.2.1.25.4.2.1.6.11391 -l [0-3] -h [4-6]
 CRITICAL: Response value '4' matches critical regex '[4-6]'
 
-
-./check_snmp.sh -H 192.168.200.101 -o iso.3.6.1.2.1.25.4.2.1.6.11391 -w 3 -m 7 -W 7 -M 999
-CRTICAL: Response value '4' is smaller than critical limit '7'
+./check_snmp.sh -H 192.168.200.101 -o iso.3.6.1.2.1.25.3.2.1.3.1 -l "Pentium" -h "Intel.*Xeon.*"
+CRITICAL: Response value 'Intel(R) Xeon(R) CPU E5-1680 v2 @ 3.00GHz' matches critical regex 'Intel.*Xeon.*'
 ```
 
 
