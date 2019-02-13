@@ -18,7 +18,7 @@ CRITICAL: Response value 'Intel(R) Xeon(R) CPU E5-1680 v2 @ 3.00GHz' matches cri
 Example config (see commands.conf) for Icinga 2:
 ```
 object Host "mailserver.local" {
-  check_command = "snmp"
+  check_command = "check-snmp"
   address = "192.168.200.101"
   vars.csnmp_oid = "iso.3.6.1.2.1.25.3.2.1.3.1"
   vars.csnmp_community = "public"
