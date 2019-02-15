@@ -1,6 +1,6 @@
 #!/bin/bash
-# Author: ozzi-  https://github.com/ozzi-/check_snmp/
-
+# Author: ozzi-  https://github.com/ozzi-/check_snmp/ 
+ 
 # startup checks
 if [ -z "$BASH" ]; then
   echo "Please use BASH."
@@ -100,8 +100,9 @@ fi
 
 start=$(echo $(($(date +%s%N)/1000000)))
 
-rtr=$(snmpget -Oqv -v2c -c $community $host $oid | cut -d "\"" -f 2)
+rtr=$(snmpget -Oqv -v2c -c $community $host $oid)
 status=$?
+rtr=$(echo $rtr | cut -d "\"" -f 2)
 
 end=$(echo $(($(date +%s%N)/1000000)))
 
