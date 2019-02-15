@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author: ozzi-  https://github.com/ozzi-/check_snmp/ 
- 
+
 # startup checks
 if [ -z "$BASH" ]; then
   echo "Please use BASH."
@@ -103,8 +103,8 @@ start=$(echo $(($(date +%s%N)/1000000)))
 rtr=$(snmpget -Oqv -v2c -c $community $host $oid)
 status=$?
 rtr=$(echo $rtr | cut -d "\"" -f 2)
-
 end=$(echo $(($(date +%s%N)/1000000)))
+runtime=$(($end-$start))
 
 if [ $status -eq 0 ] ; then
   if [ $regexmode -eq 1 ]; then
@@ -115,7 +115,7 @@ if [ $status -eq 0 ] ; then
       echo "WARNING: Response value '"$rtr"' matches warning regex '"$warningregex"'"
       exit 1
     else
-      echo "$rtr;${warning};${critical};0;"
+      echo "OK: snmpget='"$rtr"' in "$runtime" ms"
     fi
   else
     re='^[0-9]+$'
@@ -139,7 +139,7 @@ if [ $status -eq 0 ] ; then
       fi
       exit 1
     else
-      echo "$rtr;${warning};${critical};0;"
+      echo "OK: snmpget='"$rtr"' in "$runtime" ms"
     fi
   fi
   exit $?
