@@ -115,7 +115,7 @@ if [ $status -eq 0 ] ; then
       echo "WARNING: Response value '"$rtr"' matches warning regex '"$warningregex"'"
       exit 1
     else
-      echo "OK: snmpget='"$rtr"' in "$runtime" ms"
+      echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr;"
     fi
   else
     re='^[0-9]+$'
@@ -139,7 +139,7 @@ if [ $status -eq 0 ] ; then
       fi
       exit 1
     else
-      echo "OK: snmpget='"$rtr"' in "$runtime" ms"
+      echo "OK: snmpget='"$rtr"' in "$runtime" ms | warning=$rtr;$minwarning;$maxwarning critical=$rtr;$mincritical;$maxcritical"
     fi
   fi
   exit $?
