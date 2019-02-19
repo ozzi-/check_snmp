@@ -139,7 +139,7 @@ if [ $status -eq 0 ] ; then
          exit 1
        fi
     fi
-    echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr;$warning;$critical;;"
+    echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr;$warning;$critical;0;$critical"
     exit 0
   fi
 else
