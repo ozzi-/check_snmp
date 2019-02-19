@@ -1,6 +1,6 @@
 # check_snmp
 Provides SNMP checks using warning / critical limits for integer results or regexes.
-
+Supports performance data.
 
 ## Script
 ```
@@ -20,7 +20,8 @@ Provides SNMP checks using warning / critical limits for integer results or rege
 ```
 Notes: 
 - You can either set limits (-w & -c) OR regexes (-W & -C)
-- Setting limits and regexs, regexes will be used
+- Setting limits and regexes, regexes will be used
+- When using regexes, the performance data won't include warning / critical limits
 - When setting a warning limit that is smaller than the critical limit, a GREATER THAN will be used to evaluate the result
 - When setting a critical limit that is smaller than the warning limit, a LESS THAN will be used to evaluate the result
 
