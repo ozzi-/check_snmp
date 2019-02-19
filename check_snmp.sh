@@ -22,28 +22,31 @@ port=161
 
 # Usage Info
 usage() {
-  echo '''Usage: check_snmp [OPTIONS]
-  [OPTIONS]:
-  -p PORT          Port to send the snmp request to (default: 161)
-  -C COMMUNITY     SNMP community name (default: public)
-  -H HOST          Hostname to send SNMP queries to
-  -o OID           SNMP OID to query
-  -l WARNING       If regex matches WARNING will be returned, overrides -m,-w, -W and -M
-  -h CRITICAL      If regex matches CRITICAL will be returned, overrides -m, -w, -W and -M
-  -w MIN_WARNING   Bottom warning limit, if result is an integer value and below limit, WARNING will be returned
-  -m MAX_WARNING   Top warning limit, if result is an integer value and above limit, WARNING will be returned
-  -W MIN_CRITICAL  Bottom critical limit, if result is an integer value and below limit, CRITICAL will be returned
-  -M MAX_CRITICAL  Top critical limit, if result is an integer value and above limit, CRITICAL will be returned'''
+  echo '''
+  Usage: check_snmp [OPTIONS]
+  [OPTIONS]
+
+  -p PORT            Port to send the snmp request to (default: 161)
+  -N COMMUNITY       SNMP community name (default: public)
+  -H HOST            Hostname to send SNMP queries to
+  -o OID             SNMP OID to query
+
+  -w WARNING         Defines limit for WARNING
+  -c CRITICAL        Defines limit for CRITICAL
+
+  -W WARNING REGEX   If regex matches WARNING will be returned
+  -C CRITICAL REGEX  If regex matches CRITICAL will be returned
+  '''
 }
 
 #main
 #get options
-while getopts "p:C:H:o:l:h:w:m:W:M:" opt; do
+while getopts "p:N:H:o:W:C:w:c:" opt; do
   case $opt in
     p)
       port=$OPTARG
       ;;
-    C)
+    N)
       community=$OPTARG
       ;;
     H)
@@ -52,23 +55,17 @@ while getopts "p:C:H:o:l:h:w:m:W:M:" opt; do
     o)
       oid=$OPTARG
       ;;
-    l)
+    W)
       warningregex=$OPTARG
       ;;
-    h)
+    C)
       criticalregex=$OPTARG
       ;;
     w)
-      minwarning=$OPTARG
+      warning=$OPTARG
       ;;
-    m)
-      maxwarning=$OPTARG
-      ;;
-    W)
-      mincritical=$OPTARG
-      ;;
-    M)
-      maxcritical=$OPTARG
+    c)
+      critical=$OPTARG
       ;;
     *)
       usage
@@ -85,10 +82,10 @@ if [ -z "$host" ]; then
 fi
 if [ -n "$criticalregex" ] && [ -n "$warningregex" ]; then
   regexmode=1
-elif [ -n "$minwarning" ] && [ -n "$maxwarning" ] && [ -n "$mincritical" ] && [ -n "$maxcritical" ]; then
+elif [ -n "$warning" ] && [ -n "$critical" ]; then
   regexmode=0
 else
-  echo "Error: Either use -l and -h OR use -w -m -W -M"
+  echo "Error: Either use regexes -W & -C OR use -w & -c"
   usage
   exit 3
 fi
@@ -99,7 +96,6 @@ if [ -z "$oid" ]; then
 fi
 
 start=$(echo $(($(date +%s%N)/1000000)))
-
 rtr=$(snmpget -Oqv -v2c -c $community $host $oid)
 status=$?
 rtr=$(echo $rtr | cut -d "\"" -f 2)
@@ -109,40 +105,43 @@ runtime=$(($end-$start))
 if [ $status -eq 0 ] ; then
   if [ $regexmode -eq 1 ]; then
     if [[ "$rtr" =~ $criticalregex ]]; then
-      echo "CRITICAL: Response value '"$rtr"' matches critical regex '"$criticalregex"'"
+      echo "CRITICAL: Result value '"$rtr"' matches critical regex '"$criticalregex"'"
       exit 2
     elif [[ "$rtr" =~ $warningregex ]]; then
-      echo "WARNING: Response value '"$rtr"' matches warning regex '"$warningregex"'"
+      echo "WARNING: Result value '"$rtr"' matches warning regex '"$warningregex"'"
       exit 1
     else
-      echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr;"
+      echo "OK: snmpget='"$rtr"' in "$runtime" ms | result=$rtr"
+      exit 0
     fi
   else
     re='^[0-9]+$'
     if ! [[ $rtr =~ $re ]] ; then
-      echo "CRITICAL: Expected integer value as repsonse (as using -w -m -W- M) but response is not an integer value '$rtr' - use -l and -h for regex checks"
+      echo "CRITICAL: Expected integer value as repsonse, since you are using -w & -c, but result is not an integer value '$rtr' - use -W & -C to use regexes"
       exit 2
     fi
-
-    if [ $rtr -gt $maxcritical ] || [ $rtr -lt $mincritical ]; then
-      if [ $rtr -gt $maxcritical ]; then
-        echo "CRTICAL: Response value '"$rtr"' is bigger than critical limit '"$maxcritical"'"
-      else
-        echo "CRTICAL: Response value '"$rtr"' is smaller than critical limit '"$mincritical"'"
-      fi
-      exit 2
-    elif [ $rtr -gt $maxwarning ] || [ $rtr -lt $minwarning ]; then
-      if [ $rtr -gt $maxwarning ]; then
-        echo "WARNING: Response value '"$rtr"' is bigger than warning limit '"$maxwarning"'"
-      else
-        echo "WARNING: Response value '"$rtr"' is smaller than warning limit '"$minwarning"'"
-      fi
-      exit 1
+    if [ $critical -gt $warning ]; then
+       if [ $rtr -gt $critical ]; then
+         echo "CRITICAL: '$rtr' is bigger than critical limit '$critical'"
+         exit 2
+       fi
+       if [ $rtr -gt $warning ]; then
+         echo "WARNING: '$rtr' is bigger than warning limit '$warning'"
+         exit 1
+       fi
     else
-      echo "OK: snmpget='"$rtr"' in "$runtime" ms | warning=$rtr;$minwarning;$maxwarning critical=$rtr;$mincritical;$maxcritical"
+       if [ $rtr -lt $critical ]; then
+         echo "CRITICAL: '$rtr' is smaller than critical limit '$critical'"
+         exit 2
+       fi
+       if [ $rtr -lt $warning ]; then
+         echo "WARNING: '$rtr' is smaller than warning limit '$warning'"
+         exit 1
+       fi
     fi
+    echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr;$warning;$critical;;"
+    exit 0
   fi
-  exit $?
 else
   case $status in
     1)
