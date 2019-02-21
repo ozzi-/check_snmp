@@ -105,13 +105,15 @@ runtime=$(($end-$start))
 if [ $status -eq 0 ] ; then
   if [ $regexmode -eq 1 ]; then
     if [[ "$rtr" =~ $criticalregex ]]; then
-      echo "CRITICAL: Result value '"$rtr"' matches critical regex '"$criticalregex"'"
+      regexsafe = ${criticalregex//[|]/PIPE}
+      echo "CRITICAL: Result value '"$rtr"' matches critical regex '"$regexsafe"' | value=$rtr"
       exit 2
     elif [[ "$rtr" =~ $warningregex ]]; then
-      echo "WARNING: Result value '"$rtr"' matches warning regex '"$warningregex"'"
+      regexsafe = ${warningregex//[|]/PIPE}
+      echo "WARNING: Result value '"$rtr"' matches warning regex '"$regexsafe"' | value=$rtr"
       exit 1
     else
-      echo "OK: snmpget='"$rtr"' in "$runtime" ms | result=$rtr"
+      echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr"
       exit 0
     fi
   else
@@ -122,20 +124,20 @@ if [ $status -eq 0 ] ; then
     fi
     if [ $critical -gt $warning ]; then
        if [ $rtr -gt $critical ]; then
-         echo "CRITICAL: '$rtr' is bigger than critical limit '$critical'"
+         echo "CRITICAL: '$rtr' is bigger than critical limit '$critical' | value=$rtr;$warning;$critical;0;$critical"
          exit 2
        fi
        if [ $rtr -gt $warning ]; then
-         echo "WARNING: '$rtr' is bigger than warning limit '$warning'"
+         echo "WARNING: '$rtr' is bigger than warning limit '$warning' | value=$rtr;$warning;$critical;0;$critical"
          exit 1
        fi
     else
        if [ $rtr -lt $critical ]; then
-         echo "CRITICAL: '$rtr' is smaller than critical limit '$critical'"
+         echo "CRITICAL: '$rtr' is smaller than critical limit '$critical' | value=$rtr;$warning;$critical;0;$critical"
          exit 2
        fi
        if [ $rtr -lt $warning ]; then
-         echo "WARNING: '$rtr' is smaller than warning limit '$warning'"
+         echo "WARNING: '$rtr' is smaller than warning limit '$warning' | value=$rtr;$warning;$critical;0;$critical"
          exit 1
        fi
     fi
