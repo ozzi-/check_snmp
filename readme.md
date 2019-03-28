@@ -8,15 +8,19 @@ Supports performance data.
   [OPTIONS]
 
   -p PORT            Port to send the snmp request to (default: 161)
-  -n COMMUNITY       SNMP community name (default: public)
+  -N COMMUNITY       SNMP community name (default: public)
   -H HOST            Hostname to send SNMP queries to
   -o OID             SNMP OID to query
+  -V VERSION         SNMP Version (default: 2)
+  -M MORE            When using -V 3, pass all required snmpget parameters
+                     with -M, i.E. "-u user -a MD5 -A 72d0815....D38 -x AES"
 
   -w WARNING         Defines limit for WARNING
   -c CRITICAL        Defines limit for CRITICAL
 
   -W WARNING REGEX   If regex matches WARNING will be returned
   -C CRITICAL REGEX  If regex matches CRITICAL will be returned
+ 
 ```
 Notes: 
 - You can either set limits (-w & -c) OR regexes (-W & -C)
@@ -42,6 +46,10 @@ WARNING: Result value '2' matches warning regex '[1-3]'
 # (4) If result string is a Pentium CPU, return warning, if a Xeon CPU, return critical
 ./check_snmp.sh -H 192.168.200.101 -o iso.3.6.1.2.1.25.3.2.1.3.1 -l "Pentium" -h "Intel.*Xeon.*"
 CRITICAL: Result value 'Intel(R) Xeon(R) CPU E5-1680 v2 @ 3.00GHz' matches critical regex 'Intel.*Xeon.*'
+
+# (5) SNMPv3, see -M providing multiple command line arguments passed straight on
+./check_snmp.sh -H 192.168.200.102 -o so.3.6.1.2.1.25.4.2.1.6.11391 -V 3 -w 4 -c 7 -M "-u user -a MD5 -A 72...D38 -x AES"
+
 ```
 
 ## Icinga 2
