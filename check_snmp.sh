@@ -1,5 +1,5 @@
 #!/bin/bash
-# Author: ozzi-  https://github.com/ozzi-/check_snmp/ 
+# Author: ozzi-  https://github.com/ozzi-/check_snmp/
 
 # startup checks
 if [ -z "$BASH" ]; then
@@ -19,6 +19,8 @@ fi
 # Default Values
 community="public"
 port=161
+version=2
+more=""
 
 # Usage Info
 usage() {
@@ -30,6 +32,9 @@ usage() {
   -N COMMUNITY       SNMP community name (default: public)
   -H HOST            Hostname to send SNMP queries to
   -o OID             SNMP OID to query
+  -V VERSION         SNMP Version (default: 2)
+  -M MORE            When using -V 3, pass all required snmpget parameters
+                     with -M, i.E. "-u user -a MD5 -A 72d0815....D38 -x AES"
 
   -w WARNING         Defines limit for WARNING
   -c CRITICAL        Defines limit for CRITICAL
@@ -41,7 +46,7 @@ usage() {
 
 #main
 #get options
-while getopts "p:N:H:o:W:C:w:c:" opt; do
+while getopts "p:N:H:o:V:M:W:C:w:c:" opt; do
   case $opt in
     p)
       port=$OPTARG
@@ -54,6 +59,12 @@ while getopts "p:N:H:o:W:C:w:c:" opt; do
       ;;
     o)
       oid=$OPTARG
+      ;;
+    V)
+      version=$OPTARG
+      ;;
+    M)
+      more=$OPTARG
       ;;
     W)
       warningregex=$OPTARG
@@ -94,10 +105,32 @@ if [ -z "$oid" ]; then
   usage
   exit 3
 fi
+if ! [[ "$version" =~ ^[0-9]+$ ]]; then
+  echo "Error: -V must be 1 , 2 or 3"
+  usage
+  exit 3
+fi
+if [ $version -lt 1 ] || [ $version -gt 3 ]; then
+  echo "Error: -V must be 1 , 2 or 3"
+  usage
+  exit 3
+fi
+
+oversion=$version
+if [ $version -eq 2 ];then
+  version="-v2c"
+elif [ $version -eq 1 ]; then
+  version="-v1"
+fi
 
 start=$(echo $(($(date +%s%N)/1000000)))
-rtr=$(snmpget -Oqv -v2c -c $community $host $oid)
+if [ $oversion -eq 3 ] ; then
+  rtr=$(eval snmpget -Oqv -v3 $more $host $oid 2>&1)
+else
+  rtr=$(eval snmpget -Oqv $version -c $community $host $oid 2>&1)
+fi
 status=$?
+
 rtr=$(echo $rtr | cut -d "\"" -f 2)
 end=$(echo $(($(date +%s%N)/1000000)))
 runtime=$(($end-$start))
@@ -147,10 +180,10 @@ if [ $status -eq 0 ] ; then
 else
   case $status in
     1)
-      echo "CRITICAL: snmpget returned error code 1 (connection failed)"
+      echo "CRITICAL: snmpget returned error code 1 (connection failed) - $rtr"
       ;;
     *)
-      echo "UNKNOWN: snmpget returned unknown error code $status"
+      echo "UNKNOWN: snmpget returned unknown error code $status - $rtr"
       exit 3
       ;;
   esac
