@@ -21,6 +21,7 @@ community="public"
 port=161
 version=2
 more=""
+label="value"
 
 # Usage Info
 usage() {
@@ -35,6 +36,7 @@ usage() {
   -V VERSION         SNMP Version (default: 2)
   -M MORE            When using -V 3, pass all required snmpget parameters
                      with -M, i.E. "-u user -a MD5 -A 72d0815....D38 -x AES"
+  -L LABEL           Performance Label
 
   -w WARNING         Defines limit for WARNING
   -c CRITICAL        Defines limit for CRITICAL
@@ -77,6 +79,10 @@ while getopts "p:N:H:o:V:M:W:C:w:c:" opt; do
       ;;
     c)
       critical=$OPTARG
+      ;;
+    l)
+     label=\'$OPTARG\'
+     labelClean=$OPTARG
       ;;
     *)
       usage
@@ -139,14 +145,14 @@ if [ $status -eq 0 ] ; then
   if [ $regexmode -eq 1 ]; then
     if [[ "$rtr" =~ $criticalregex ]]; then
       regexsafe = ${criticalregex//[|]/PIPE}
-      echo "CRITICAL: Result value '"$rtr"' matches critical regex '"$regexsafe"' | value=$rtr"
+      echo "CRITICAL: Result value '"$rtr"' matches critical regex '"$regexsafe"' | $label=$rtr"
       exit 2
     elif [[ "$rtr" =~ $warningregex ]]; then
       regexsafe = ${warningregex//[|]/PIPE}
-      echo "WARNING: Result value '"$rtr"' matches warning regex '"$regexsafe"' | value=$rtr"
+      echo "WARNING: Result value '"$rtr"' matches warning regex '"$regexsafe"' | $label=$rtr"
       exit 1
     else
-      echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr"
+      echo "SNMP OK - $labelClean $rtr in "$runtime" ms | $label=${rtr}c;$warning;$critical;"
       exit 0
     fi
   else
@@ -157,24 +163,24 @@ if [ $status -eq 0 ] ; then
     fi
     if [ $critical -gt $warning ]; then
        if [ $rtr -gt $critical ]; then
-         echo "CRITICAL: '$rtr' is bigger than critical limit '$critical' | value=$rtr;$warning;$critical;0;$critical"
+         echo "CRITICAL: '$rtr' is bigger than critical limit '$critical' | $label=$rtr;$warning;$critical;0;$critical"
          exit 2
        fi
        if [ $rtr -gt $warning ]; then
-         echo "WARNING: '$rtr' is bigger than warning limit '$warning' | value=$rtr;$warning;$critical;0;$critical"
+         echo "WARNING: '$rtr' is bigger than warning limit '$warning' | $label=$rtr;$warning;$critical;0;$critical"
          exit 1
        fi
     else
        if [ $rtr -lt $critical ]; then
-         echo "CRITICAL: '$rtr' is smaller than critical limit '$critical' | value=$rtr;$warning;$critical;0;$critical"
+         echo "CRITICAL: '$rtr' is smaller than critical limit '$critical' | $label=$rtr;$warning;$critical;0;$critical"
          exit 2
        fi
        if [ $rtr -lt $warning ]; then
-         echo "WARNING: '$rtr' is smaller than warning limit '$warning' | value=$rtr;$warning;$critical;0;$critical"
+         echo "WARNING: '$rtr' is smaller than warning limit '$warning' | $label=$rtr;$warning;$critical;0;$critical"
          exit 1
        fi
     fi
-    echo "OK: snmpget='"$rtr"' in "$runtime" ms | value=$rtr;$warning;$critical;0;$critical"
+    echo "SNMP OK - $labelClean $rtr in "$runtime" ms | $label=${rtr};$warning;$critical;"
     exit 0
   fi
 else
